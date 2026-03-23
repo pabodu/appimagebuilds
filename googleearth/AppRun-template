@@ -62,9 +62,9 @@ CNT_SETUP=( bwrap
 #--setenv QT_QPA_PLATFORM xcb
 #--setenv MESA_LOADER_DRIVER_OVERRIDE "zink"
 #--setenv XAUTHORITY "$XAUTHORITY"
---setenv XDG_CACHE_HOME /home/maxuser/.cache
+--setenv XDG_CACHE_HOME /home/geuser/.cache
 --setenv XDG_CONFIG_DIRS /etc/xdg
---setenv XDG_CONFIG_HOME /home/maxuser/.config
+--setenv XDG_CONFIG_HOME /home/geuser/.config
 --setenv XDG_CURRENT_DESKTOP "$XDG_CURRENT_DESKTOP"
 --setenv XDG_DATA_DIRS "$XDG_DATA_DIRS"
 #--setenv XDG_GREETER_DATA_DIR /var/lib/lightdm/data/pbd

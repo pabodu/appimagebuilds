@@ -1,0 +1,37 @@
+diff --git a/build-deps b/build-deps
+new file mode 100644
+index 0000000..db06a2c
+--- /dev/null
++++ b/build-deps
+@@ -0,0 +1 @@
++build-essential cmake libcurl4-openssl-dev libglib2.0-dev libgcrypt-dev libgpgme-dev pkg-config
+diff --git a/src/appimagetool.c b/src/appimagetool.c
+index 3033dcb..d32d116 100644
+--- a/src/appimagetool.c
++++ b/src/appimagetool.c
+@@ -71,6 +71,7 @@ static char _exclude_file_desc[256];
+ 
+ static gboolean list = FALSE;
+ static gboolean verbose = FALSE;
++static gboolean root_owned = FALSE;
+ static gboolean showVersionOnly = FALSE;
+ static gboolean sign = FALSE;
+ static gboolean no_appstream = FALSE;
+@@ -144,7 +145,8 @@ int sfs_mksquashfs(char *source, char *destination, int offset) {
+         args[i++] = "-comp";
+         args[i++] = sqfs_comp;
+ 
+-        args[i++] = "-root-owned";
++	if (root_owned)
++            args[i++] = "-root-owned";
+         args[i++] = "-noappend";
+ 
+         // compression-specific optimization
+@@ -516,6 +518,7 @@ static GOptionEntry entries[] =
+     { "guess", 'g', 0, G_OPTION_ARG_NONE, &guess_update_information, "Guess update information based on GitHub or GitLab environment variables", NULL },
+     { "version", 0, 0, G_OPTION_ARG_NONE, &showVersionOnly, "Show version number", NULL },
+     { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Produce verbose output", NULL },
++    { "root-owned", 'r', 0, G_OPTION_ARG_NONE, &root_owned, "Use -root-owned option for mksquashfs", NULL },
+     { "sign", 's', 0, G_OPTION_ARG_NONE, &sign, "Sign with gpg[2]", NULL },
+     { "comp", 0, 0, G_OPTION_ARG_STRING, &sqfs_comp, "Squashfs compression (default: zstd", NULL },
+     { "mksquashfs-opt", 0, 0, G_OPTION_ARG_STRING_ARRAY, &sqfs_opts, "Argument to pass through to mksquashfs; can be specified multiple times", NULL },

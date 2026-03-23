@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Rosa Base AppImage Platform
+GenericName=Common part of some AppImages
+Comment=Save space and resources by factoring out
+Exec=/bin/bash -i
+Terminal=true
+Icon=rosa-base
+Type=Application
+Categories=Application;Network

@@ -1,0 +1,1 @@
+mount -o bind,ro /root/susestrap/rosa-linux/rosatest /overlay/base

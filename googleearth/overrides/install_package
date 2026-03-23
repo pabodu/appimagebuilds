@@ -1,0 +1,14 @@
+rm -f /rosa-base.desktop
+#mkdir /usr/share/desktop-directories
+#echo "keepcache=True" >> /etc/dnf/dnf.conf
+wget https://dl.google.com/linux/linux_signing_key.pub
+rpm --import linux_signing_key.pub
+rm -f linux_signing_key.pub 
+dnf -y update
+cd /package
+wget $(cat google-earth-pro-stable-current.x86_64.rpm-url)
+dnf -y install google-earth-pro-stable-current.x86_64.rpm
+rm -f google-earth-pro-stable-current.x86_64.rpm
+useradd -u 1000 -m -s /bin/bash geuser
+ldd /opt/google/earth/pro/googleearth-bin | grep found
+true

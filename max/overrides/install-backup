@@ -1,0 +1,90 @@
+rm -f /etc/yum.repos.d/20-rosa-main-i686.repo
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+tee /etc/yum.repos.d/max.repo <<'EOF'
+[max]
+name=MAX Desktop
+baseurl=https://download.max.ru/linux/rpm/el/9/$basearch
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://download.max.ru/linux/rpm/public.asc
+sslverify=1
+metadata_expire=300
+EOF
+rpm --import https://download.max.ru/linux/rpm/public.asc
+dnf update
+dnf clean all
+#lib64OpenGL0 \
+#lib64EGL1 \
+#lib64fontenc1 \
+#nvidia340-core-340.108-16.x86_64 \
+dnf -y install max \
+nvidia470-core-470.256.02-9.x86_64 \
+lib64nss3 \
+lib64xtst6 \
+lib64xcb-shape0 \
+lib64xv1 \
+lib64xmuu1 \
+lib64xcb-xkb1 \
+lib64xcb-icccm4 \
+lib64xcb-util-image0 \
+lib64xcb-util-keysyms1 \
+lib64xcb-util-renderutil0 \
+lib64xcb-xinerama0 \
+lib64xcb-composite0 \
+lib64xcb-res0 \
+lib64pulseaudio0 \
+lib64xkbcommon-x11_0 \
+lib64pipewire0.3_0 \
+setxkbmap \
+xkbcomp \
+xkeyboard-config \
+libx11-common \
+lib64freebl3 \
+glibc-locale-source \
+fonts-ttf-bitstream-vera \
+fonts-ttf-dejavu \
+fonts-ttf-droid \
+fonts-ttf-fontawesome \
+fonts-ttf-fontawesome-web \
+fonts-ttf-freefont \
+fonts-ttf-liberation \
+fonts-ttf-liberation-mono \
+fonts-ttf-liberation-sans \
+fonts-ttf-liberation-serif \
+fonts-ttf-montserrat \
+fonts-ttf-opensans \
+fonts-ttf-paratype \
+fonts-ttf-paratype-caption \
+fonts-ttf-unbounded
+#lib64OpenGL0-1.7.0-5.x86_64 \
+#lib64EGL1 \
+#lib64fontenc1 \
+#lib64nss3-2:3.107-1.x86_64 \
+#lib64xtst6-1.2.5-1.x86_64 \
+#lib64xcb-shape0-1.17.0-2.x86_64 \
+#lib64xv1-1.0.13-1.x86_64 \
+#lib64xmuu1-1.2.1-2.x86_64 \
+#lib64xcb-xkb1-1.17.0-2.x86_64 \
+#lib64xcb-icccm4-0.4.2-2.x86_64 \
+#lib64xcb-util-image0-0.4.1-2.x86_64 \
+#lib64xcb-util-keysyms1-0.4.1-2.x86_64 \
+#lib64xcb-util-renderutil0-0.3.10-2.x86_64 \
+#lib64xcb-xinerama0-1.17.0-2.x86_64 \
+#lib64xcb-composite0-1.17.0-2.x86_64 \
+#lib64xcb-res0-1.17.0-2.x86_64 \
+#lib64pulseaudio0-17.0-3.x86_64 \
+#lib64xkbcommon-x11_0-1.12.4-1.x86_64 \
+#lib64pipewire0.3_0-1.4.9-2.x86_64 \
+#setxkbmap-1.3.4-1.x86_64 \
+#libx11-common \
+#glibc-locale-source
+localedef --inputfile=ru_RU --charmap=UTF-8 ru_RU.UTF-8
+localedef --inputfile=en_US --charmap=UTF-8 en_US.UTF-8
+useradd -u 1000 -m -s /bin/bash maxuser
+ldd /usr/share/max/bin/max|grep found
+ldd /usr/share/max/bin/max-service/bin/max-service|grep found
+ldd /usr/share/max/plugins/platforms/libqxcb.so |grep found
+chmod 755 /usr/share/max/plugins/platforms/libqxcb.so
+ls -l /usr/share/max/plugins/platforms/libqxcb.so
+ln -sf /usr/share/zoneinfo/Asia/Yekaterinburg /etc/localtime

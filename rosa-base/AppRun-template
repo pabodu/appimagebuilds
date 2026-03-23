@@ -1,0 +1,10 @@
+#!/bin/bash
+#set -x
+
+export APPIMAGE_BASE="${APPDIR}"
+
+if [ $# -gt 0 ]; then
+    exec "${1}" "${@:2}"
+else
+    exec /bin/bash -i
+fi

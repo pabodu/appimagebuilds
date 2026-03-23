@@ -1,0 +1,11 @@
+dnf -y update
+dnf -y install tar
+cd /package
+wget https://github.com/supertuxkart/stk-code/releases/download/1.5/SuperTuxKart-1.5-linux-x86_64.tar.gz
+cd /
+tar xvzf /package/SuperTuxKart-1.5-linux-x86_64.tar.gz 
+rm -f /package/SuperTuxKart-1.5-linux-x86_64.tar.gz
+echo /SuperTuxKart-1.5-linux-x86_64/lib > /etc/ld.so.conf.d/supertuxkart.conf
+ldconfig
+ldd /SuperTuxKart-1.5-linux-x86_64/bin/supertuxkart | grep found
+useradd -u 1000 -m -s /bin/bash stkuser

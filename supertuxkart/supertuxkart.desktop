@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=SuperTuxKart
+GenericName=A game
+Comment=Drive, break and crash
+Exec=/SuperTuxKart-1.5-linux-x86_64/bin/supertuxkart
+Terminal=false
+Icon=supertuxkart
+Type=Application
+Categories=Application

@@ -12,7 +12,7 @@ sslverify=1
 metadata_expire=300
 EOF
 rpm --import https://download.max.ru/linux/rpm/public.asc
-dnf update
+dnf -y update
 dnf clean all
 #lib64OpenGL0 \
 #lib64EGL1 \

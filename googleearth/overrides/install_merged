@@ -7,7 +7,8 @@ dnf clean all
 #lib64fontenc1 \
 #nvidia340-core-340.108-16.x86_64 \
 #dnf -y install max \
-dnf -y install /package/google-earth-pro-stable-current.x86_64.rpm \
+dnf -y install \
+wget \
 nvidia470-core-470.256.02-9.x86_64 \
 lib64nss3 \
 lib64xtst6 \
@@ -50,6 +51,10 @@ lib64proxy1 \
 lib64gstreamer1.0_0 \
 lib64gstreamer-plugins-base1.0_0 \
 lib64sm6
+cd /package
+wget `cat google-earth-pro-stable-current.x86_64.rpm-url`
+dnf -y install /package/google-earth-pro-stable-current.x86_64.rpm
+rm -f /package/google-earth-pro-stable-current.x86_64.rpm
 #lib64OpenGL0-1.7.0-5.x86_64 \
 #lib64EGL1 \
 #lib64fontenc1 \

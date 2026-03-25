@@ -1,4 +1,3 @@
-rm -f /rosa-base.desktop
 #mkdir /usr/share/desktop-directories
 #echo "keepcache=True" >> /etc/dnf/dnf.conf
 wget https://dl.google.com/linux/linux_signing_key.pub

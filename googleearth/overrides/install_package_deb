@@ -1,0 +1,15 @@
+#mkdir /usr/share/desktop-directories
+#echo "keepcache=True" >> /etc/dnf/dnf.conf
+#wget https://dl.google.com/linux/linux_signing_key.pub
+#rpm --import linux_signing_key.pub
+wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | tee /etc/apt/trusted.gpg.d/google.asc
+#rm -f linux_signing_key.pub 
+apt-get -y update
+cd /package
+wget $(cat google-earth-pro-stable_current_amd64.deb-url)
+#dnf -y install google-earth-pro-stable-current.x86_64.rpm
+apt install /package/google-earth-pro-stable_current_amd64.deb
+rm -f /package/google-earth-pro-stable_current_amd64.deb
+#useradd -u 1000 -m -s /bin/bash geuser
+ldd /opt/google/earth/pro/googleearth-bin | grep found
+true

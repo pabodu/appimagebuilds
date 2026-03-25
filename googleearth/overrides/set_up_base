@@ -1,2 +1,3 @@
-mount -o bind,ro /root/susestrap/rosa-linux/rosatest /overlay/base
+#mount -o bind,ro /root/susestrap/rosa-linux/rosatest /overlay/base
 #mount -o bind,ro ${APPIMAGE_BASE} /overlay/base
+mount -o bind,ro /tmp_hostroot/merged /overlay/base

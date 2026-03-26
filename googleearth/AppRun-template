@@ -8,10 +8,10 @@ if [ -z "${EXEC}" ]; then
     exit 1
 fi
 
-#if [ -z "${APPIMAGE_BASE}" ]; then
-#    echo "APPIMAGE_BASE not set"
-#    exit 1
-#fi
+if [ -z "${APPIMAGE_BASE}" ]; then
+    echo "APPIMAGE_BASE not set"
+    exit 1
+fi
 
 #[ -z "${PWD}" ] && PWD=$(pwd)
 #HOME_DIR=$(realpath ${PWD})
@@ -37,11 +37,11 @@ CNT_SETUP=( bwrap
 --unshare-ipc
 --unshare-cgroup
 #--unshare-net
-#--overlay-src ${APPIMAGE_BASE}
-#--overlay-src ${APPDIR}
-#--tmp-overlay /
---bind ${APPDIR} /
---bind /dev/null /AppRun
+--overlay-src ${APPIMAGE_BASE}
+--overlay-src ${APPDIR}
+--tmp-overlay /
+#--bind ${APPDIR} /
+#--bind /dev/null /AppRun
 #--bind /dev/null /max.desktop
 #--bind /dev/null /max.png
 --proc /proc

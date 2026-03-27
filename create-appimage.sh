@@ -123,40 +123,37 @@ while true; do
     fi
 done
 # set_up_base ------------------------------------------------------------------------------------------------
-#mount -t overlay overlay -o userxattr,lowerdir=/overlay/base,upperdir=/overlay/package,workdir=/overlay/work /overlay/merged
-#mount --rbind /dev /overlay/merged/dev
-#mount --rbind /dev/pts /overlay/merged/dev/pts
-#mount --rbind /run /overlay/merged/run
-#mount --rbind /proc /overlay/merged/proc
-#mount --rbind /tmp /overlay/merged/tmp
-function install_and_cleanup {
-# install ----------------------------------------------------------------------------------------------
-message "Starting main installation..."
-cd "${PACKAGE}"
-while true; do
+function install_and_cleanup
+{
+    # install ----------------------------------------------------------------------------------------------
+    message "Starting main installation..."
+    cd "${PACKAGE}"
     while true; do
-        [ ! -f overrides/install ] && touch overrides/install
+        while true; do
+            [ ! -f overrides/install ] && touch overrides/install
 
-        [ -n "$AUTOMATIC" ] && break
+            reply="y"
+            [ -n "$AUTOMATIC" ] && break
 
-        echo "install:"
-        cat overrides/install
-        read -p "Is it what you want? [y/n] " reply
-        [ "$reply" == "y" ] && break
-        interactive_chroot_install appimage
-        message "Running subshell..."
-        /bin/bash --rcfile <(echo "PS1='install> '") -i
+            echo "install:"
+            cat overrides/install
+            read -p "Is it what you want? [y/n/s] " reply
+            if [ "${reply}" == "y" -o "${reply}" == "s" ]; then break; fi
+            interactive_chroot_install appimage
+            message "Running subshell..."
+            /bin/bash --rcfile <(echo "PS1='install> '") -i
+        done
+        [ "${reply}" == "s" ] && break
+        [ -n "$AUTOMATIC" ] && echo "Using install:" && cat overrides/install
+        chroot /overlay/merged /bin/bash /package/overrides/install
+        [ $? -eq 0 ] && break
     done
-    [ -n "$AUTOMATIC" ] && echo "Using install:" && cat overrides/install
-    chroot /overlay/merged /bin/bash /package/overrides/install
-    [ $? -eq 0 ] && break
-done
-# install ----------------------------------------------------------------------------------------------
-# cleanup --------------------------------------------------------------------------------------------
-message "Cleaning up..."
-cd "${PACKAGE}"
-while true; do
-    if [ ! -f overrides/cleanup ]; then
+    # install ----------------------------------------------------------------------------------------------
+    # cleanup --------------------------------------------------------------------------------------------
+    message "Cleaning up..."
+    cd "${PACKAGE}"
+    while true; do
+        if [ ! -f overrides/cleanup ]; then
 cat <<'OUTER' > overrides/cleanup
 cat <<EOF | xargs rm -rf
 root
@@ -169,35 +166,23 @@ var/lib/dpkg
 var/lib/apt
 EOF
 OUTER
-    fi
+        fi
 
-    [ -n "$AUTOMATIC" ] && break
+        reply="y"
+        [ -n "$AUTOMATIC" ] && break
 
-    echo "cleanup:"
-    cat overrides/cleanup
-    read -p "Is it what you want? [y/n] " reply
-    [ "$reply" == "y" ] && break
-    message "Running subshell..."
-    /bin/bash --rcfile <(echo "PS1='cleanup> '") -i
-done
-[ -n "$AUTOMATIC" ] && echo "Using cleanup:" && cat overrides/cleanup
-cd /overlay/merged
-source package/overrides/cleanup
-# cleanup --------------------------------------------------------------------------------------------
+        echo "cleanup:"
+        cat overrides/cleanup
+        read -p "Is it what you want? [y/n/s] " reply
+        if [ "${reply}" == "y" -o "${reply}" == "s" ]; then break; fi
+        message "Running subshell..."
+        /bin/bash --rcfile <(echo "PS1='cleanup> '") -i
+    done
+    [ -n "$AUTOMATIC" ] && echo "Using cleanup:" && cat overrides/cleanup
+    cd /overlay/merged
+    [ "${reply}" != "s" ] && source package/overrides/cleanup
+    # cleanup --------------------------------------------------------------------------------------------
 }
-#cd "${PACKAGE}"
-#if [ -z "$AUTOMATIC" ]; then
-#    message "Chroot /overlay/merged testing point reached"
-#    interactive_chroot_install testing_merged
-#fi
-
-#umount_dir /overlay/merged/package
-#rmdir /overlay/merged/package
-#umount_dir /overlay/merged/proc
-#umount_dir /overlay/merged/dev/pts
-#umount_dir /overlay/merged/dev
-#umount_dir /overlay/merged/run
-#umount_dir /overlay/merged/tmp
 
 if [ -n "$AUTOMATIC" ]; then
     APPDIR="$APPDIR" make
@@ -233,8 +218,6 @@ else
     done
 fi
 
-#message "Umounting /overlay/merged..."
-#umount_dir /overlay/merged
 umount_dir /overlay
 rmdir /overlay
 message "Exiting script..."

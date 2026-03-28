@@ -184,39 +184,40 @@ OUTER
     # cleanup --------------------------------------------------------------------------------------------
 }
 
-if [ -n "$AUTOMATIC" ]; then
-    APPDIR="$APPDIR" make
-else
-    while true; do
-        message "Cleaning up /overlay/package wash-out files..."
-        find /overlay/package -type c -exec rm -f {} \;
-        cd /overlay/package
-        APPDIR="$APPDIR" /bin/bash --rcfile <(echo "PS1='Inspect /overlay/package ($(pwd))> '") -i
-        message "Mounting /overlay/merged..."
-        mount -t overlay overlay -o userxattr,lowerdir=/overlay/base,upperdir=/overlay/package,workdir=/overlay/work /overlay/merged
-        mount --rbind /dev /overlay/merged/dev
-        mount --rbind /dev/pts /overlay/merged/dev/pts
-        mount --rbind /run /overlay/merged/run
-        mount --rbind /proc /overlay/merged/proc
-        mount --rbind /tmp /overlay/merged/tmp
-        mkdir /overlay/merged/package
-        mount --bind "${PACKAGE}" /overlay/merged/package
-        install_and_cleanup
-        umount_dir /overlay/merged/package
-        rmdir /overlay/merged/package
-        cd "${PACKAGE}"
-        umount_dir /overlay/merged/proc
-        umount_dir /overlay/merged/dev/pts
-        umount_dir /overlay/merged/dev
-        umount_dir /overlay/merged/run
-        umount_dir /overlay/merged/tmp
+while true; do
+    message "Cleaning up /overlay/package wash-out files..."
+    find /overlay/package -type c -exec rm -f {} \;
+    cd /overlay/package
+    [ -z "$AUTOMATIC" ] && APPDIR="$APPDIR" /bin/bash --rcfile <(echo "PS1='Inspect /overlay/package ($(pwd))> '") -i
+    message "Mounting /overlay/merged..."
+    mount -t overlay overlay -o userxattr,lowerdir=/overlay/base,upperdir=/overlay/package,workdir=/overlay/work /overlay/merged
+    mount --rbind /dev /overlay/merged/dev
+    mount --rbind /dev/pts /overlay/merged/dev/pts
+    mount --rbind /run /overlay/merged/run
+    mount --rbind /proc /overlay/merged/proc
+    mount --rbind /tmp /overlay/merged/tmp
+    mkdir /overlay/merged/package
+    mount --bind "${PACKAGE}" /overlay/merged/package
+    install_and_cleanup
+    umount_dir /overlay/merged/package
+    rmdir /overlay/merged/package
+    cd "${PACKAGE}"
+    umount_dir /overlay/merged/proc
+    umount_dir /overlay/merged/dev/pts
+    umount_dir /overlay/merged/dev
+    umount_dir /overlay/merged/run
+    umount_dir /overlay/merged/tmp
+    if [ -z "$AUTOMATIC" ]; then
         APPDIR="$APPDIR" /bin/bash --rcfile <(echo "PS1='Set up Makefile ($(pwd))> '") -i
-        message "Umounting /overlay/merged..."
-        umount_dir /overlay/merged
-        read -p "Are you done with the AppImage? [y/n] " reply
-        [ "${reply}" == "y" ] && break
-    done
-fi
+    else
+        APPDIR="$APPDIR" make
+    fi
+    message "Umounting /overlay/merged..."
+    umount_dir /overlay/merged
+    reply="y"
+    [ -z "$AUTOMATIC" ] && read -p "Are you done with the AppImage? [y/n] " reply
+    [ "${reply}" == "y" ] && break
+done
 
 umount_dir /overlay
 rmdir /overlay

@@ -15,33 +15,59 @@ fi
 
 #[ -z "${PWD}" ] && PWD=$(pwd)
 #HOME_DIR=$(realpath ${PWD})
-HOME_DIR="/home/pbd/gehome"
+HOME_DIR="/home/subs/gehome"
 CNT_HOME_DIR="/home/geuser"
-LANG="ru_RU.UTF-8"
+[ -z "$LANG" ] && LANG="ru_RU.UTF-8"
 
 CNT_ARGS_FILE="/tmp/args"
 trap "rm -f $CNT_ARGS_FILE" EXIT
 
-#(
-#exec Xephyr -br -ac -noreset -screen 1280x800 -retro :1
-#exec Xephyr -keybd ephyr,,,xkbmodel=evdev,xkblayout=ru,xkbvariant=intl -br -ac -noreset -screen 1280x800 -retro :1
-#exec Xephyr -keybd ephyr,,,xkbmodel=evdev,xkblayout=ru -screen 1280x800 -retro :1
-#) &
-#DISPLAY=:1
+# From https://github.com/containers/bubblewrap/issues/468
+# Thank you, guys
+set -euo pipefail
+
+info_pipe=$(mktemp -u) || exit $?
+userns_pipe=$(mktemp -u) || exit $?
+
+mkfifo "${info_pipe}" || exit $?
+mkfifo "${userns_pipe}" || exit $?
+
+(
+# jq is the hard dependency for launching these AppImages with user mapping
+    pid=$(<"${info_pipe}" /usr/bin/jq '."child-pid"')
+
+#    newuidmap "${pid}" 0 1000 1 1 100000 65536
+#    newgidmap "${pid}" 0 1000 1 1 100000 65536
+# The first "1000" is the user on the host launching AppImage, he has UID 0 in the container
+# The second "1000" is the user in the container launching the payload program, he has UID 101000 on the host
+    newuidmap "${pid}" 0 1000 1 1000 101000 64536
+    newgidmap "${pid}" 0 1000 1 1000 101000 64536
+
+    echo 1 > "${userns_pipe}"
+
+    rm "${info_pipe}" "${userns_pipe}"
+) &
+
+exec {info_fd}<>"${info_pipe}"
+exec {userns_fd}<>"${userns_pipe}"
 
 CNT_SETUP=( bwrap
-#--unshare-user
-#--uid 0
-#--gid 0
+--info-fd "${info_fd}"
+--userns-block-fd "${userns_fd}"
+--unshare-user
+--uid 0
+--gid 0
 --unshare-pid
 --unshare-ipc
 --unshare-cgroup
 #--unshare-net
 #--overlay-src ${APPIMAGE_BASE}
-#--overlay-src ${APPDIR}
-#--tmp-overlay /
---bind ${APPDIR} /
---bind /dev/null /AppRun
+--overlay-src ${APPDIR}
+--tmp-overlay /
+#--bind ${APPDIR} /
+--cap-add CAP_SETUID
+--cap-add CAP_SETGID
+#--bind /dev/null /AppRun
 #--bind /dev/null /max.desktop
 #--bind /dev/null /max.png
 --proc /proc
@@ -95,7 +121,8 @@ while true; do
     if [ "${reply}" == "y" ]; then
 #      exec "${CNT_SETUP[@]}" "${EXEC}" "$@"
         exec {args_fd}< "$CNT_ARGS_FILE" && rm -f "$CNT_ARGS_FILE"
-        exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
+        #exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
+        exec -a /sbin/init bwrap --args ${args_fd} setpriv --reuid=1000 --regid=1000 --inh-caps=-all --ambient-caps=-all --clear-groups "${EXEC}" "$@"
     elif [ "${reply}" == "n" ]; then
         echo "Exiting..."
         exit 0

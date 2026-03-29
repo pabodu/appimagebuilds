@@ -29,9 +29,8 @@ function umount_dir
 {
     local DIR="$1"
     while ! umount -R "${DIR}"; do
-        message "Umounting ${DIR} failed, trying again in 1 second..."
-        message "Process using ${DIR}: $(fuser ${DIR})"
-        sleep 1 
+        message "Umounting ${DIR} failed, launching console..."
+        /bin/bash --rcfile <(echo "PS1='Manual resolution ($(pwd))> '") -i
     done &&\
     return 0
 }

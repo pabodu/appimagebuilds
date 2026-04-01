@@ -86,10 +86,10 @@ CNT_SETUP=( bwrap
 --dev-bind /dev/urandom /dev/urandom
 --dev-bind /dev/tty /dev/tty
 --dev-bind /dev/ptmx /dev/ptmx
---dev-bind /dev/pts/3 /dev/console
+--dev-bind /dev/pts/1 /dev/console
 #--dev /dev
 --ro-bind /sys /sys
---bind /sys/fs/cgroup /sys/fs/cgroup
+--bind /sys/fs/cgroup/user.slice/user-1000.slice /sys/fs/cgroup/user.slice/user-1000.slice
 --tmpfs /run
 --dir /run/user
 #--bind /run/user/1000/at-spi /run/user/1000/at-spi

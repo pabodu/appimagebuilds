@@ -2,10 +2,6 @@
 #set -x
 EXEC="${1}"; shift
 #EXEC="/usr/share/max/bin/max"
-if [ -z "${EXEC}" ]; then
-    EXEC="/usr/lib/systemd/systemd"
-    set --
-fi
 
 if [ -z "${EXEC}" ]; then
     echo "Usage: AppImage <exec file>"
@@ -17,8 +13,8 @@ fi
 #fi
 #[ -z "${PWD}" ] && PWD=$(pwd)
 #HOME_DIR=$(realpath ${PWD})
-HOME_DIR="/home/subs/maxhome1"
-CNT_HOME_DIR="/home/maxuser"
+HOME_DIR="/home/subs/obhome"
+CNT_HOME_DIR="/home/obuser"
 
 CNT_ARGS_FILE="/tmp/args"
 trap "rm -f $CNT_ARGS_FILE" EXIT
@@ -36,7 +32,6 @@ mkfifo "${userns_pipe}" || exit $?
 (
 # jq is the hard dependency for launching these AppImages with user mapping
     pid=$(<"${info_pipe}" /usr/bin/jq '."child-pid"')
-    [ -z "$pid" ] && exit 0
 
 #    newuidmap "${pid}" 0 1000 1 1 100000 65536
 #    newgidmap "${pid}" 0 1000 1 1 100000 65536
@@ -54,7 +49,6 @@ exec {info_fd}<>"${info_pipe}"
 exec {userns_fd}<>"${userns_pipe}"
 
 CNT_SETUP=( bwrap
---as-pid-1
 --info-fd "${info_fd}"
 --userns-block-fd "${userns_fd}"
 --unshare-user
@@ -62,35 +56,23 @@ CNT_SETUP=( bwrap
 --gid 0
 --unshare-pid
 --unshare-ipc
-#--unshare-cgroup
+--unshare-cgroup
 #--unshare-net
 #--overlay-src ${APPIMAGE_BASE}
 --overlay-src ${APPDIR}
 --tmp-overlay /
 --cap-add CAP_SETUID
 --cap-add CAP_SETGID
---cap-add CAP_MKNOD
---cap-add CAP_SYS_ADMIN
 #--bind ${APPDIR} /
 #--bind /dev/null /AppRun
 #--bind /dev/null /max.desktop
 #--bind /dev/null /max.png
 --proc /proc
---bind /proc/sys /proc/sys
-#--dev-bind /dev /dev
---tmpfs /dev
---dev-bind /dev/null /dev/null
---dev-bind /dev/zero /dev/zero
---dev-bind /dev/full /dev/full
---dev-bind /dev/random /dev/random
---dev-bind /dev/urandom /dev/urandom
---dev-bind /dev/tty /dev/tty
---dev-bind /dev/ptmx /dev/ptmx
---dev-bind /dev/pts/3 /dev/console
+--dev-bind /dev /dev
 #--dev /dev
---ro-bind /sys /sys
---bind /sys/fs/cgroup /sys/fs/cgroup
+--bind /sys /sys
 --tmpfs /run
+--perms 1777
 --dir /run/user
 #--bind /run/user/1000/at-spi /run/user/1000/at-spi
 #--bind /run/user/1000/bus /run/user/1000/bus
@@ -112,7 +94,6 @@ CNT_SETUP=( bwrap
 #--bind /tmp/.ICE-unix /tmp/.ICE-unix
 --bind ${HOME_DIR} ${CNT_HOME_DIR}
 --clearenv
---setenv container bwrap-appimage
 #--setenv DISPLAY ${DISPLAY}
 --setenv LANG ${LANG}
 --setenv HOME ${CNT_HOME_DIR}
@@ -154,8 +135,8 @@ while true; do
     if [ "${reply}" == "y" ]; then
 #      exec "${CNT_SETUP[@]}" "${EXEC}" "$@"
         exec {args_fd}< "$CNT_ARGS_FILE" && rm -f "$CNT_ARGS_FILE"
-        exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
-#        exec -a /sbin/init bwrap --args ${args_fd} setpriv --reuid=1001 --regid=1001 --inh-caps=-all --ambient-caps=-all --clear-groups "${EXEC}" "$@"
+#        exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
+        exec -a /sbin/init bwrap --args ${args_fd} setpriv --reuid=1001 --regid=1001 --inh-caps=-all --ambient-caps=-all --clear-groups "${EXEC}" "$@"
     elif [ "${reply}" == "n" ]; then
         echo "Exiting..."
         exit 0

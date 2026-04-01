@@ -1,0 +1,69 @@
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.max.ru/linux/deb/public.asc | gpg --dearmor -o /etc/apt/keyrings/max.gpg
+echo "deb [signed-by=/etc/apt/keyrings/max.gpg] https://download.max.ru/linux/deb stable main" | tee /etc/apt/sources.list.d/max.list
+#dpkg-reconfigure locales
+sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
+sed -i 's/^# *\(ru_RU.UTF-8\)/\1/' /etc/locale.gen
+locale-gen
+#export DEBIAN_FRONTEND=noninteractive
+rm -f /etc/apt/sources.list
+cat <<EOF > /etc/apt/sources.list.d/ubuntu.list
+deb http://archive.ubuntu.com/ubuntu noble main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu noble-updates main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu noble-security main restricted universe multiverse
+deb http://archive.ubuntu.com/ubuntu noble-backports main universe restricted multiverse
+EOF
+apt-get update
+#apt-get install -y libopengl0 \
+#libxkbcommon0 \
+#libxkbcommon-x11-0 \
+#libpulse0 \
+#libegl1 \
+#libfontconfig1 \
+#libxcb-icccm4 \
+#libxcb-util1 \
+#libxcb-image0 \
+#libxcb-keysyms1 \
+#libxcb-render0 \
+#libxcb-render-util0 \
+#libxcb-shape0 \
+#libxcb-xkb1 \
+#libnss3 \
+#libxcomposite1 \
+#libxdamage1 \
+#libxrender1 \
+#libxrandr2 \
+#libxtst6 \
+#libxi6 \
+#libasound2t64 \
+#libxkbfile1 \
+#libpipewire-0.3-0t64 \
+#libpipewire-0.3-modules \
+#libpipewire-0.3-modules-x11 \
+#max
+apt-get install -y \
+libqt6xml6 \
+libqt6quick6 \
+libqt6multimedia6 \
+libqt6websockets6 \
+libqt6webenginequick6 \
+libqt6webview6 \
+dbus-x11 \
+libxv1 \
+libfontenc1 \
+libxaw7 \
+libxmu6 \
+libxmuu1 \
+libxpm4 \
+libxres1 \
+libxss1 \
+libxt6t64 \
+libxcb-res0 \
+libasound2t64
+apt-get install -y max
+cat <<EOF > /etc/ld.so.conf.d/max.conf
+#/usr/share/max/bin/max-service/lib64
+#/usr/share/max/lib
+/usr/share/max/lib64
+EOF
+ldconfig

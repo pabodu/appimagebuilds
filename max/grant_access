@@ -1,0 +1,7 @@
+xhost +local:
+setfacl -m "u:101001:rx" "$XDG_RUNTIME_DIR/"
+setfacl -m "u:101001:rx" "$XDG_RUNTIME_DIR/pulse/"
+setfacl -m "u:101001:rx" "$XDG_RUNTIME_DIR/at-spi/"
+#setfacl -m "u:101001:rw" "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY" "$XDG_RUNTIME_DIR/pipewire-0" "$XDG_RUNTIME_DIR/pulse/native"
+#setfacl -m "u:101001:rw" "$XDG_RUNTIME_DIR/pulse/native"
+

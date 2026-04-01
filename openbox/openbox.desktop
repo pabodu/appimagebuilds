@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=OpenBox
+GenericName=openbox
+Comment=Openbox win man
+Exec=/usr/bin/openbox
+Terminal=false
+Icon=openbox
+Type=Application
+Categories=Application

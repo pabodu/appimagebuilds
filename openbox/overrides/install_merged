@@ -1,0 +1,55 @@
+rm -f /etc/yum.repos.d/20-rosa-main-i686.repo
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+dnf -y update
+dnf clean all
+dnf -y install \
+which \
+wget \
+nvidia470-core-470.256.02-9.x86_64 \
+lib64nss3 \
+lib64xtst6 \
+lib64xcb-shape0 \
+lib64xv1 \
+lib64xmuu1 \
+lib64xcb-xkb1 \
+lib64xcb-icccm4 \
+lib64xcb-util-image0 \
+lib64xcb-util-keysyms1 \
+lib64xcb-util-renderutil0 \
+lib64xcb-xinerama0 \
+lib64xcb-composite0 \
+lib64xcb-res0 \
+lib64pulseaudio0 \
+lib64xkbcommon-x11_0 \
+lib64pipewire0.3_0 \
+setxkbmap \
+xkbcomp \
+xkeyboard-config \
+libx11-common \
+lib64freebl3 \
+glibc-locale-source \
+fonts-ttf-bitstream-vera \
+fonts-ttf-dejavu \
+fonts-ttf-droid \
+fonts-ttf-fontawesome \
+fonts-ttf-fontawesome-web \
+fonts-ttf-freefont \
+fonts-ttf-liberation \
+fonts-ttf-liberation-mono \
+fonts-ttf-liberation-sans \
+fonts-ttf-liberation-serif \
+fonts-ttf-montserrat \
+fonts-ttf-opensans \
+fonts-ttf-paratype \
+fonts-ttf-paratype-caption \
+fonts-ttf-unbounded \
+lib64proxy1 \
+lib64gstreamer1.0_0 \
+lib64gstreamer-plugins-base1.0_0 \
+lib64sm6 \
+dbus-x11 \
+openbox
+localedef --inputfile=ru_RU --charmap=UTF-8 ru_RU.UTF-8
+localedef --inputfile=en_US --charmap=UTF-8 en_US.UTF-8
+ln -sf /usr/share/zoneinfo/Asia/Yekaterinburg /etc/localtime
+useradd -u 1001 -m -s /bin/bash obuser

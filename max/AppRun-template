@@ -4,7 +4,7 @@ EXEC="${1}"; shift
 #EXEC="/usr/share/max/bin/max"
 if [ -z "${EXEC}" ]; then
     EXEC="/usr/lib/systemd/systemd"
-    set --
+    set -- "--log-target=console" "--log-level=debug"
 fi
 
 if [ -z "${EXEC}" ]; then
@@ -154,6 +154,7 @@ while true; do
     if [ "${reply}" == "y" ]; then
 #      exec "${CNT_SETUP[@]}" "${EXEC}" "$@"
         exec {args_fd}< "$CNT_ARGS_FILE" && rm -f "$CNT_ARGS_FILE"
+        #NOTIFY_SOCKET=/run/systemd/notify systemd-notify --fd=1023 --fdname=appimage-mount-fd || exit 1
         exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
 #        exec -a /sbin/init bwrap --args ${args_fd} setpriv --reuid=1001 --regid=1001 --inh-caps=-all --ambient-caps=-all --clear-groups "${EXEC}" "$@"
     elif [ "${reply}" == "n" ]; then

@@ -1,0 +1,38 @@
+echo "deb-src http://deb.debian.org/debian forky main" >> /etc/apt/sources.list
+#tee /etc/apt/sources.list.d/localrepo.list <<'EOF' 
+#deb [trusted=yes] file:/localrepo ./
+#EOF
+#dpkg-reconfigure locales
+sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
+sed -i 's/^# *\(ru_RU.UTF-8\)/\1/' /etc/locale.gen
+locale-gen
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get -y dist-upgrade
+apt-get -y install \
+systemd
+#tee /usr/local/bin/my-background-service.sh <<'EOF'
+##!/bin/bash
+#while true; do
+#  echo "$(date) - Service is running" >> /var/log/my-background-service.log
+#  sleep 60
+#done
+#EOF
+#chmod +x /usr/local/bin/my-background-service.sh
+#tee /etc/systemd/system/my-background-service.service <<'EOF'
+#[Unit]
+#Description=My Indefinite Background Service
+#After=network.target
+#
+#[Service]
+#Type=simple
+#ExecStart=/usr/local/bin/my-background-service.sh
+#Restart=always
+#RestartSec=3
+#User=root
+#FileDescriptorStoreMax=50
+#FileDescriptorStorePreserve=yes
+#
+#[Install]
+#WantedBy=multi-user.target
+#EOF

@@ -80,16 +80,3 @@ index 0000000..30ca909
 +void notify_mount_ready_async(const char *notify_pipe, char status);
 +
 +#endif
-diff --git a/src/runtime/runtime.c b/src/runtime/runtime.c
-index 2ebb3c8..d6d2bb6 100644
---- a/src/runtime/runtime.c
-+++ b/src/runtime/runtime.c
-@@ -39,7 +39,7 @@
- #include <stddef.h>
- 
- #include <squashfuse/ll.h>
--#include <squashfuse/fuseprivate.h>
-+#include "fuseprivate.h"
- 
- extern dev_t sqfs_makedev(int maj, int min);
- 

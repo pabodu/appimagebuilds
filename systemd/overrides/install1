@@ -1,0 +1,13 @@
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.max.ru/linux/deb/public.asc | gpg --dearmor -o /etc/apt/keyrings/max.gpg
+echo "deb [signed-by=/etc/apt/keyrings/max.gpg] https://download.max.ru/linux/deb stable main" | tee /etc/apt/sources.list.d/max.list
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install -y libqt6xml6 libqt6quick6 libqt6multimedia6 libqt6websockets6 libqt6webenginequick6 libqt6webview6
+apt-get install -y max
+cat <<EOF > /etc/ld.so.conf.d/max.conf
+#/usr/share/max/bin/max-service/lib64
+/usr/share/max/lib
+/usr/share/max/lib64
+EOF
+ldconfig

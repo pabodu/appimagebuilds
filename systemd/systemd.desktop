@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=Systemd
+GenericName=Systemd
+Comment=A system manager
+Exec=/usr/lib/systemd/systemd
+Terminal=false
+Icon=systemd
+Type=Application
+Categories=Application

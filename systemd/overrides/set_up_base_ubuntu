@@ -1,0 +1,2 @@
+DEBIAN_FRONTEND=noninteractive apt-get install -y debootstrap
+debootstrap --variant=minbase --include=ca-certificates,curl,gpg,locales noble /overlay/base http://archive.ubuntu.com/ubuntu

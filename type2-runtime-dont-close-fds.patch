@@ -1,0 +1,119 @@
+diff --git a/src/runtime/runtime.c b/src/runtime/runtime.c
+index 2ebb3c8..a7cc279 100644
+--- a/src/runtime/runtime.c
++++ b/src/runtime/runtime.c
+@@ -39,7 +39,7 @@
+ #include <stddef.h>
+ 
+ #include <squashfuse/ll.h>
+-#include <squashfuse/fuseprivate.h>
++#include "fuseprivate.h"
+ 
+ extern dev_t sqfs_makedev(int maj, int min);
+ 
+@@ -587,30 +587,30 @@ extern int fusefs_main(int argc, char* argv[], void (* mounted)(void));
+ // extern void ext2_quit(void);
+ 
+ static pid_t fuse_pid;
+-static int keepalive_pipe[2];
+-
+-static void*
+-write_pipe_thread(void* arg) {
+-    char c[32];
+-    int res;
+-    //  sprintf(stderr, "Called write_pipe_thread");
+-    memset(c, 'x', sizeof(c));
+-    while (1) {
+-        /* Write until we block, on broken pipe, exit */
+-        res = write(keepalive_pipe[1], c, sizeof(c));
+-        if (res == -1) {
+-            kill(fuse_pid, SIGTERM);
+-            break;
+-        }
+-    }
+-    return NULL;
+-}
++//static int keepalive_pipe[2];
++
++//static void*
++//write_pipe_thread(void* arg) {
++//    char c[32];
++//    int res;
++//    //  sprintf(stderr, "Called write_pipe_thread");
++//    memset(c, 'x', sizeof(c));
++//    while (1) {
++//        /* Write until we block, on broken pipe, exit */
++//        res = write(keepalive_pipe[1], c, sizeof(c));
++//        if (res == -1) {
++//            kill(fuse_pid, SIGTERM);
++//            break;
++//        }
++//    }
++//    return NULL;
++//}
+ 
+ void
+ fuse_mounted(void) {
+-    pthread_t thread;
++//    pthread_t thread;
+     fuse_pid = getpid();
+-    pthread_create(&thread, NULL, write_pipe_thread, keepalive_pipe);
++//    pthread_create(&thread, NULL, write_pipe_thread, keepalive_pipe);
+ }
+ 
+ char* getArg(int argc, char* argv[], char chr) {
+@@ -1723,10 +1723,10 @@ int main(int argc, char* argv[]) {
+         exit(EXIT_EXECERROR);
+     }
+ 
+-    if (pipe(keepalive_pipe) == -1) {
+-        perror("pipe error");
+-        exit(EXIT_EXECERROR);
+-    }
++//    if (pipe(keepalive_pipe) == -1) {
++//        perror("pipe error");
++//        exit(EXIT_EXECERROR);
++//    }
+ 
+     pid = fork();
+     if (pid == -1) {
+@@ -1754,7 +1754,7 @@ int main(int argc, char* argv[]) {
+         char* child_argv[5];
+ 
+         /* close read pipe */
+-        close(keepalive_pipe[0]);
++//        close(keepalive_pipe[0]);
+ 
+         char* dir = realpath(appimage_path, NULL);
+ 
+@@ -1780,13 +1780,17 @@ int main(int argc, char* argv[]) {
+         };
+     } else {
+         /* in parent, child is $pid */
+-        int c;
++//        int c, flags;
++        int flags;
+ 
+         /* close write pipe */
+-        close(keepalive_pipe[1]);
++//        close(keepalive_pipe[1]);
++
++//        flags = fcntl(keepalive_pipe[0], F_GETFD);
++//        fcntl(keepalive_pipe[0], F_SETFD, flags | FD_CLOEXEC);
+ 
+         /* Pause until mounted */
+-        read(keepalive_pipe[0], &c, 1);
++//        read(keepalive_pipe[0], &c, 1);
+ 
+         /* Fuse process has now daemonized, reap our child */
+         waitpid(pid, NULL, 0);
+@@ -1804,6 +1808,9 @@ int main(int argc, char* argv[]) {
+         }
+         close(dir_fd);
+ 
++        flags = fcntl(1023, F_GETFD);
++        fcntl(1023, F_SETFD, flags | FD_CLOEXEC);
++
+         real_argv = malloc(sizeof(char*) * (argc + 1));
+         for (i = 0; i < argc; i++) {
+             real_argv[i] = argv[i];

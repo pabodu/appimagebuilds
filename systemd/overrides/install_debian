@@ -36,3 +36,4 @@ systemd
 #[Install]
 #WantedBy=multi-user.target
 #EOF
+apt-get install dbus-broker

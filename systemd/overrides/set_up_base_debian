@@ -1,2 +1,2 @@
 DEBIAN_FRONTEND=noninteractive apt-get install -y debootstrap
-debootstrap --variant=minbase --include=apt-transport-https,ca-certificates,curl,gpg,dialog,locales forky /overlay/base http://mirror.yandex.ru/debian
+debootstrap --variant=minbase --include=apt-transport-https,ca-certificates,curl,gpg,dialog,locales trixie /overlay/base http://mirror.yandex.ru/debian

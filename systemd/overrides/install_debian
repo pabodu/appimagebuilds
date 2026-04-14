@@ -1,7 +1,7 @@
-echo "deb-src http://deb.debian.org/debian forky main" >> /etc/apt/sources.list
-#tee /etc/apt/sources.list.d/localrepo.list <<'EOF' 
-#deb [trusted=yes] file:/localrepo ./
-#EOF
+echo "deb-src http://deb.debian.org/debian trixie main" >> /etc/apt/sources.list
+tee /etc/apt/sources.list.d/localrepo.list <<'EOF' 
+deb [trusted=yes] file:/localrepo ./
+EOF
 #dpkg-reconfigure locales
 sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
 sed -i 's/^# *\(ru_RU.UTF-8\)/\1/' /etc/locale.gen
@@ -10,7 +10,12 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get -y dist-upgrade
 apt-get -y install \
-systemd
+systemd xfce4-terminal
+#systemd xfce4-terminal dbus-x11
+useradd -u 1001 -m -s /bin/bash maxuser
+echo 'root:12345' | chpasswd
+echo 'maxuser:12345' | chpasswd
+usermod -aG sudo maxuser
 #tee /usr/local/bin/my-background-service.sh <<'EOF'
 ##!/bin/bash
 #while true; do
@@ -36,4 +41,3 @@ systemd
 #[Install]
 #WantedBy=multi-user.target
 #EOF
-apt-get install dbus-broker

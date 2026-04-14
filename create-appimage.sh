@@ -44,6 +44,7 @@ if [ -n "${APPDIR}" ]; then
             read -p "Remove all the contents of the ${APPDIR}? [y/n] " reply
             if [ "${reply}" == "y" ]; then
                 rm -rf "${APPDIR}"/*
+                rm -rf "${APPDIR}"/.DirIcon
             fi
         fi
     fi
@@ -229,7 +230,7 @@ while true; do
     [ -n "$LOCALREPO" ] && mount --bind "${LOCALREPO}" /overlay/merged/localrepo
     install_and_cleanup
     umount_dir /overlay/merged/package
-    [ -n "$lOCALREPO" ] && umount_dir /overlay/merged/localrepo
+    [ -n "$LOCALREPO" ] && umount_dir /overlay/merged/localrepo
     rmdir /overlay/merged/package
     cd "${PACKAGE}"
     umount_dir /overlay/merged/proc

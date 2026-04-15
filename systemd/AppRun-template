@@ -85,6 +85,7 @@ CNT_SETUP=( bwrap
 --cap-add CAP_SYS_TTY_CONFIG
 --cap-add CAP_SYS_RAWIO
 --cap-add CAP_SYS_RESOURCE
+--cap-add CAP_SYS_CHROOT
 #--cap-add ALL
 #--bind ${APPDIR} /
 #--bind /dev/null /AppRun
@@ -136,7 +137,7 @@ CNT_SETUP=( bwrap
 --ro-bind ${APPDIR}/init.sh /init.sh
 --clearenv
 --setenv container bwrap-appimage
---setenv container_ttys pts/1
+#--setenv container_ttys pts/1
 --setenv DISPLAY ${DISPLAY}
 --setenv LANG ${LANG}
 --setenv HOME ${CNT_HOME_DIR}

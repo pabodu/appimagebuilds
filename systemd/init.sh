@@ -29,6 +29,6 @@ cat <<-EOF > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-terminal.xml
 EOF
 
 /usr/bin/xfce4-terminal.wrapper -e sleep infinity &
-/usr/bin/xfce4-terminal.wrapper -e sleep infinity &
+#/usr/bin/xfce4-terminal.wrapper -e sleep infinity &
 
 exec -a /sbin/init "${EXEC}" "$@"

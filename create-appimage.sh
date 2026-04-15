@@ -1,9 +1,9 @@
 #!/bin/bash
 #set -x
-#podman run -it --rm --privileged --volume $(pwd):/root -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:trixie
-#podman run -it --rm --privileged --volume $(pwd):/root --mount=type=bind,source=debian.sources,destination=/etc/apt/sources.list.d/debian.sources -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:trixie
-#podman run -it --rm --privileged --volume $(pwd):/root -e APPIMAGE_BASE=$APPIMAGE_BASE -e DISPLAY=$DISPLAY -v $APPIMAGE_BASE:$APPIMAGE_BASE -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:trixie
-#podman run -it --rm --privileged --volume $(pwd):/root --mount=type=bind,source=debian.sources,destination=/etc/apt/sources.list.d/debian.sources -e APPIMAGE_BASE=$APPIMAGE_BASE -e DISPLAY=$DISPLAY -v $APPIMAGE_BASE:$APPIMAGE_BASE -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:trixie
+#podman run -it --rm --privileged --volume $(pwd):/root -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:forky
+#podman run -it --rm --privileged --volume $(pwd):/root --mount=type=bind,source=debian.sources,destination=/etc/apt/sources.list.d/debian.sources -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:forky
+#podman run -it --rm --privileged --volume $(pwd):/root -e APPIMAGE_BASE=$APPIMAGE_BASE -e DISPLAY=$DISPLAY -v $APPIMAGE_BASE:$APPIMAGE_BASE -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:forky
+#podman run -it --rm --privileged --volume $(pwd):/root --mount=type=bind,source=debian.sources,destination=/etc/apt/sources.list.d/debian.sources -e APPIMAGE_BASE=$APPIMAGE_BASE -e DISPLAY=$DISPLAY -v $APPIMAGE_BASE:$APPIMAGE_BASE -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:forky
 #set -e
 PACKAGE="${1}"
 LOCALREPO="${2}"
@@ -215,6 +215,12 @@ OUTER
     # cleanup --------------------------------------------------------------------------------------------
 }
 
+function copy_merged_to_appdir
+{
+    message "Copying /overlay/merged to ${APPDIR}..."
+    (cd /overlay/merged; tar cf - .) | (cd "${APPDIR}"; tar xf -)
+}
+
 while true; do
     cd /overlay/package
     [ -z "$AUTOMATIC" ] && APPDIR_SRC="$APPDIR_SRC" /bin/bash --rcfile <(echo "PS1='Inspect /overlay/package ($(pwd))> '") -i
@@ -239,10 +245,10 @@ while true; do
     umount_dir /overlay/merged/run
     umount_dir /overlay/merged/tmp
     if [ -n "$(find "$APPDIR" -maxdepth 0 -type d  -empty 2>/dev/null)" ]; then
-        message "Copying /overlay/merged to ${APPDIR}..."
-        (cd /overlay/merged; tar cf - .) | (cd "${APPDIR}"; tar xf -)
+	copy_merged_to_appdir
     fi
     if [ -z "$AUTOMATIC" ]; then
+	export -f copy_merged_to_appdir message
         APPDIR_SRC="$APPDIR_SRC" APPDIR="$APPDIR" /bin/bash --rcfile <(echo "PS1='Set up Makefile ($(pwd))> '") -i
     else
         APPDIR_SRC="$APPDIR_SRC" APPDIR="$APPDIR" make

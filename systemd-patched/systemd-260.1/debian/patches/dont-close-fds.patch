@@ -1,0 +1,26 @@
+--- a/src/shared/fdset.c
++++ b/src/shared/fdset.c
+@@ -60,6 +60,8 @@
+         return PTR_TO_FD(p);
+ }
+ 
++static int fd_3_new, fd_1023_new;
++
+ void fdset_close(FDSet *fds, bool async) {
+         int fd;
+ 
+@@ -72,6 +74,14 @@
+                  * which has no effect at all, since they are only duplicates. So don't be surprised about
+                  * these log messages. */
+ 
++		if (fd == 3 && fd_3_new == 0) {
++			fd_3_new++;
++			continue;
++		}
++		if (fd == 1023 && fd_1023_new == 0) {
++			fd_1023_new++;
++			continue;
++		}
+                 if (DEBUG_LOGGING) {
+                         _cleanup_free_ char *path = NULL;
+ 

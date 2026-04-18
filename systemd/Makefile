@@ -1,4 +1,6 @@
-# Set APPDIR when using this Makefile!
+ifndef APPDIR
+$(error APPDIR is not set. Set APPDIR when using this Makefile!)
+endif
 
 HOST_UID = 1000
 HOST_GID = 1000

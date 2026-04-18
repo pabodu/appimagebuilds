@@ -1,10 +1,12 @@
 #!/bin/bash
 #set -x
 EXEC="${1}"; shift
+LANG=en_US.UTF-8
 #EXEC="/usr/share/max/bin/max"
 if [ -z "${EXEC}" ]; then
     EXEC="/usr/lib/systemd/systemd"
-    set -- "--log-target=console" "--log-level=warning"
+#    set -- "--log-target=console" "--log-level=warning"
+    set -- "--log-target=journal" "--log-level=debug"
 #    set -- "--log-target=console" "--log-level=debug"
 fi
 
@@ -44,12 +46,6 @@ mkfifo "${userns_pipe}" || exit $?
 
     newuidmap "${pid}" 0 1000 1 1 100000 65536
     newgidmap "${pid}" 0 1000 1 1 100000 65536
-# The first "1000" is the user on the host launching AppImage, he has UID 0 in the container
-# The second "1000" is the user in the container launching the payload program, he has UID 101000 on the host
-#    newuidmap "${pid}" 0 1000 1 1001 101001 64535
-#    newgidmap "${pid}" 0 1000 1 1001 101001 64535
-#    newuidmap "${pid}" 0 1000 1 1001 101001 64500 995 100995 1 996 100996 1 997 100997 1
-#    newgidmap "${pid}" 0 1000 1 1001 101001 64500 995 100995 1 996 100996 1 997 100997 1 998 100998 1 5 100005 1
 
     echo 1 > "${userns_pipe}"
 
@@ -60,7 +56,7 @@ exec {info_fd}<>"${info_pipe}"
 exec {userns_fd}<>"${userns_pipe}"
 
 CNT_SETUP=( bwrap
-#--new-session
+--new-session
 --as-pid-1
 --info-fd "${info_fd}"
 --userns-block-fd "${userns_fd}"
@@ -70,9 +66,8 @@ CNT_SETUP=( bwrap
 --unshare-pid
 --unshare-ipc
 --unshare-uts
-#--unshare-cgroup
+--unshare-cgroup
 #--unshare-net
-#--overlay-src ${APPIMAGE_BASE}
 --overlay-src ${APPDIR}
 --tmp-overlay /
 --cap-add CAP_SETUID
@@ -86,14 +81,14 @@ CNT_SETUP=( bwrap
 --cap-add CAP_SYS_RAWIO
 --cap-add CAP_SYS_RESOURCE
 --cap-add CAP_SYS_CHROOT
+--cap-add CAP_NET_ADMIN
+--cap-add CAP_DAC_OVERRIDE
 #--cap-add ALL
 #--bind ${APPDIR} /
-#--bind /dev/null /AppRun
-#--bind /dev/null /max.desktop
-#--bind /dev/null /max.png
 --proc /proc
 --ro-bind /proc/sys /proc/sys
 #--dev-bind /dev /dev
+#--dev /dev
 --tmpfs /dev
 --dev-bind /dev/null /dev/null
 --dev-bind /dev/zero /dev/zero
@@ -101,38 +96,20 @@ CNT_SETUP=( bwrap
 --dev-bind /dev/random /dev/random
 --dev-bind /dev/urandom /dev/urandom
 --dev-bind /dev/tty /dev/tty
-#--dev-bind /dev/ptmx /dev/ptmx
 --dir /dev/pts
 --chmod 755 /dev/pts
-#--dev /dev
 --ro-bind /sys /sys
---bind /sys/fs/cgroup /sys/fs/cgroup
 --tmpfs /run
 --tmpfs /run/lock
 --dir /run/systemd
 --dir /run/varlink/registry
 --dir /run/user
-#--bind /run/user/1000/at-spi /run/user/1000/at-spi
-#--bind /run/user/1000/bus /run/user/1000/bus
-#--bind /run/user/1000/pulse /run/user/1000/pulse
-#--bind /run/user/1000/keyring /run/user/1000/keyring
-#--bind /run/user/1000/at-spi /run/user/1001/at-spi
-#--bind /run/user/1000/bus /run/user/1001/bus
-#--bind /run/user/1000/pulse /run/user/1001/pulse
-#--bind /run/user/1000/keyring /run/user/1001/keyring
-#--bind /run/user/1000 /run/user/1000
-#--bind /run/user/1000 /run/user/1001
-#--bind /run/dbus /run/dbus
-#--bind /home /home
-#--bind /tmp /tmp
 --perms 1777
 --tmpfs /tmp
---dir /tmp/.X11-unix
 --bind /tmp/.X11-unix /tmp/.X11-unix
 --bind /tmp/core /tmp/core
 #--bind /tmp/.ICE-unix /tmp/.ICE-unix
 --bind ${HOME_DIR} ${CNT_HOME_DIR}
---tmpfs /var
 --tmpfs /var/tmp
 --ro-bind ${APPDIR}/init.sh /init.sh
 --clearenv
@@ -141,27 +118,6 @@ CNT_SETUP=( bwrap
 --setenv DISPLAY ${DISPLAY}
 --setenv LANG ${LANG}
 --setenv HOME ${CNT_HOME_DIR}
-#--setenv DBUS_SESSION_BUS_ADDRESS "$DBUS_SESSION_BUS_ADDRESS"
-#--setenv DBUS_SESSION_BUS_ADDRESS unix:path=/run/user/1001/bus
-#--setenv QT_QPA_PLATFORM xcb
-#--setenv MESA_LOADER_DRIVER_OVERRIDE "zink"
-#--setenv XAUTHORITY "$XAUTHORITY"
-#--setenv SESSION_MANAGER "$SESSION_MANAGER"
-#--setenv XDG_CACHE_HOME ${CNT_HOME_DIR}/.cache
-#--setenv XDG_CONFIG_DIRS /etc/xdg
-#--setenv XDG_CONFIG_HOME ${CNT_HOME_DIR}/.config
-#--setenv XDG_CURRENT_DESKTOP "$XDG_CURRENT_DESKTOP"
-#--setenv XDG_DATA_DIRS "$XDG_DATA_DIRS"
-#--setenv XDG_GREETER_DATA_DIR /var/lib/lightdm/data/pbd
-#--setenv XDG_MENU_PREFIX xfce-
-#--setenv XDG_RUNTIME_DIR "$XDG_RUNTIME_DIR"
-#--setenv XDG_SEAT "$XDG_SEAT"
-#--setenv XDG_SEAT_PATH "$XDG_SEAT_PATH"
-#--setenv XDG_SESSION_CLASS "$XDG_SESSION_CLASS"
-#--setenv XDG_SESSION_DESKTOP "$XDG_SESSION_DESKTOP"
-#--setenv XDG_SESSION_ID "$XDG_SESSION_ID"
-#--setenv XDG_SESSION_PATH "$XDG_SESSION_PATH"
-#--setenv XDG_SESSION_TYPE "$XDG_SESSION_TYPE"
 )
 
 CNT_SETUP_STR="${CNT_SETUP[@]} "
@@ -169,13 +125,12 @@ CNT_SETUP_STR="${CNT_SETUP_STR#bwrap }"
 echo -n "$CNT_SETUP_STR" | tr ' ' '\0' > "$CNT_ARGS_FILE"
 #echo "--dev-bind / / " | tr ' ' '\0' > "$CNT_ARGS_FILE"
 
-
 busctl call org.freedesktop.machine1 \
             /org/freedesktop/machine1 \
             org.freedesktop.machine1.Manager \
             CreateMachine \
             "sayssusa(sv)" \
-            "my-container" \
+            "aicontainer" \
             0 \
             "" \
             "container" \
@@ -183,7 +138,11 @@ busctl call org.freedesktop.machine1 \
             "" \
             0 || exit 1
 
+mkdir /sys/fs/cgroup/machine.slice/machine-aicontainer.scope/leaf &&\
+echo $$ > /sys/fs/cgroup/machine.slice/machine-aicontainer.scope/leaf/cgroup.procs
 
+echo "Contents of /proc/$$/cgroup:"
+cat /proc/$$/cgroup
 echo "Executing ${EXEC}"
 echo "${HOME_DIR} will be mapped to ${CNT_HOME_DIR}"
 #echo "DISPLAY=${DISPLAY}"

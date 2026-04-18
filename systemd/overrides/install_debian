@@ -13,36 +13,11 @@ apt-get -y install \
 systemd \
 xfce4-terminal \
 openssh-server \
-sudo
-#systemd xfce4-terminal dbus-x11
+less \
+socat \
+minicom
 useradd -u 1001 -m -s /bin/bash maxuser
 echo 'root:12345' | chpasswd
 echo 'maxuser:12345' | chpasswd
-usermod -aG sudo maxuser
 sed -i 's/#Port\ 22/Port\ 2022/g' /etc/ssh/sshd_config
 sed -i 's/#PermitRootLogin\ prohibit-password/PermitRootLogin\ yes/g' /etc/ssh/sshd_config
-#tee /usr/local/bin/my-background-service.sh <<'EOF'
-##!/bin/bash
-#while true; do
-#  echo "$(date) - Service is running" >> /var/log/my-background-service.log
-#  sleep 60
-#done
-#EOF
-#chmod +x /usr/local/bin/my-background-service.sh
-#tee /etc/systemd/system/my-background-service.service <<'EOF'
-#[Unit]
-#Description=My Indefinite Background Service
-#After=network.target
-#
-#[Service]
-#Type=simple
-#ExecStart=/usr/local/bin/my-background-service.sh
-#Restart=always
-#RestartSec=3
-#User=root
-#FileDescriptorStoreMax=50
-#FileDescriptorStorePreserve=yes
-#
-#[Install]
-#WantedBy=multi-user.target
-#EOF

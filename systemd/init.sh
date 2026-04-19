@@ -19,6 +19,10 @@ cat <<-EOF > /root/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-terminal.xml
 </channel>
 EOF
 
-/usr/bin/xfce4-terminal -e "/usr/bin/minicom -D /dev/pts/1 -w" &
+if [[ "${EXEC}" == *"systemd"* ]]; then
+    #/usr/bin/xfce4-terminal -e "/usr/bin/minicom -D /dev/pts/1 -w" &
+    xterm -geometry 200x50+0+0 -e "/usr/bin/minicom -D /dev/pts/1 -w" &
+    #/usr/bin/xfce4-terminal -e "/usr/bin/bash" &
+fi
 
 exec -a /sbin/init "${EXEC}" "$@"

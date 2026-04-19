@@ -83,6 +83,8 @@ CNT_SETUP=( bwrap
 --cap-add CAP_SYS_CHROOT
 --cap-add CAP_NET_ADMIN
 --cap-add CAP_DAC_OVERRIDE
+--cap-add CAP_SETFCAP
+--cap-add CAP_KILL
 #--cap-add ALL
 #--bind ${APPDIR} /
 --proc /proc

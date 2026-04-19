@@ -3,11 +3,20 @@ rm -f /etc/yum.repos.d/20-rosa-main-i686.repo
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 dnf -y update
 dnf -y install systemd bash \
-strace \
+openssh-server \
+socat \
+minicom \
+xterm \
+glibc-locale-source \
+libx11-common \
 createrepo_c
 #glibc-locale-source
 localedef --inputfile=ru_RU --charmap=UTF-8 ru_RU.UTF-8
 localedef --inputfile=en_US --charmap=UTF-8 en_US.UTF-8
 useradd -u 1001 -m -s /bin/bash maxuser
+echo 'root:12345' | chpasswd
+echo 'maxuser:12345' | chpasswd
 ln -sf /usr/share/zoneinfo/Asia/Yekaterinburg /etc/localtime
-
+sed -i 's/#Port\ 22/Port\ 2022/g' /etc/ssh/sshd_config
+sed -i 's/#PermitRootLogin\ prohibit-password/PermitRootLogin\ yes/g' /etc/ssh/sshd_config
+> /etc/ssh/denyusers

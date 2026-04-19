@@ -114,8 +114,11 @@ done
 [ -n "$AUTOMATIC" ] && echo "Using APPDIR_SRC:" && cat overrides/APPDIR_SRC
 # APPDIR_SRC ---------------------------------------------------------------------------------------------
 if [ -z "$APPDIR" ]; then
-    message "APPDIR value not passed, setting to ${APPDIR_SRC}"
-    APPDIR="$APPDIR_SRC"
+    message "APPDIR value not passed"
+    read -p "Setting APPDIR to ${APPDIR_SRC}, is it OK? [y/n]" reply
+    if [ "$reply" == "y" ]; then
+        APPDIR="$APPDIR_SRC"
+    fi
 fi
 # set_up_base ------------------------------------------------------------------------------------------------
 message "Creating base..."
@@ -244,8 +247,10 @@ while true; do
     umount_dir /overlay/merged/dev
     umount_dir /overlay/merged/run
     umount_dir /overlay/merged/tmp
-    if [ -n "$(find "$APPDIR" -maxdepth 0 -type d  -empty 2>/dev/null)" ]; then
-	copy_merged_to_appdir
+    if [ -n "$APPDIR" ]; then
+        if [ -n "$(find "$APPDIR" -maxdepth 0 -type d  -empty 2>/dev/null)" ]; then
+            copy_merged_to_appdir
+        fi
     fi
     if [ -z "$AUTOMATIC" ]; then
 	export -f copy_merged_to_appdir message

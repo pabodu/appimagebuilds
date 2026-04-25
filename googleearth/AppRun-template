@@ -1,73 +1,33 @@
 #!/bin/bash
 #set -x
 EXEC="${1}"; shift
-#EXEC="/opt/google/earth/pro/google-earth-pro"
+if [ -z "${EXEC}" ]; then
+    EXEC="/opt/google/earth/pro/google-earth-pro"
+fi
 
 if [ -z "${EXEC}" ]; then
     echo "Usage: AppImage <exec file>"
     exit 1
 fi
 
-#if [ -z "${APPIMAGE_BASE}" ]; then
-#    echo "APPIMAGE_BASE not set"
-#    exit 1
-#fi
-
-#[ -z "${PWD}" ] && PWD=$(pwd)
-#HOME_DIR=$(realpath ${PWD})
-HOME_DIR="/home/subs/gehome"
-CNT_HOME_DIR="/home/geuser"
-[ -z "$LANG" ] && LANG="ru_RU.UTF-8"
+#LANG="ru_RU.UTF-8"
 
 CNT_ARGS_FILE="/tmp/args"
 trap "rm -f $CNT_ARGS_FILE" EXIT
 
-# From https://github.com/containers/bubblewrap/issues/468
-# Thank you, guys
-set -euo pipefail
-
-info_pipe=$(mktemp -u) || exit $?
-userns_pipe=$(mktemp -u) || exit $?
-
-mkfifo "${info_pipe}" || exit $?
-mkfifo "${userns_pipe}" || exit $?
-
-(
-# jq is the hard dependency for launching these AppImages with user mapping
-    pid=$(<"${info_pipe}" /usr/bin/jq '."child-pid"')
-
-#    newuidmap "${pid}" 0 1000 1 1 100000 65536
-#    newgidmap "${pid}" 0 1000 1 1 100000 65536
-# The first "1000" is the user on the host launching AppImage, he has UID 0 in the container
-# The second "1000" is the user in the container launching the payload program, he has UID 101000 on the host
-    newuidmap "${pid}" 0 1000 1 1000 101000 64536
-    newgidmap "${pid}" 0 1000 1 1000 101000 64536
-
-    echo 1 > "${userns_pipe}"
-
-    rm "${info_pipe}" "${userns_pipe}"
-) &
-
-exec {info_fd}<>"${info_pipe}"
-exec {userns_fd}<>"${userns_pipe}"
-
 CNT_SETUP=( bwrap
---info-fd "${info_fd}"
---userns-block-fd "${userns_fd}"
 --unshare-user
 --uid 0
 --gid 0
---unshare-pid
---unshare-ipc
---unshare-cgroup
+#--unshare-pid
+#--unshare-ipc
+#--unshare-cgroup
 #--unshare-net
 #--overlay-src ${APPIMAGE_BASE}
---overlay-src ${APPDIR}
---tmp-overlay /
-#--bind ${APPDIR} /
---cap-add CAP_SETUID
---cap-add CAP_SETGID
-#--bind /dev/null /AppRun
+#--overlay-src ${APPDIR}
+#--tmp-overlay /
+--bind ${APPDIR} /
+--bind /dev/null /AppRun
 #--bind /dev/null /max.desktop
 #--bind /dev/null /max.png
 --proc /proc
@@ -76,34 +36,15 @@ CNT_SETUP=( bwrap
 --bind /sys /sys
 --bind /run /run
 #--bind /home /home
+--bind ${HOME} /root
 #--bind /tmp /tmp
 --tmpfs /tmp
 --dir /tmp/.X11-unix
 --bind /tmp/.X11-unix /tmp/.X11-unix
---bind ${HOME_DIR} ${CNT_HOME_DIR}
 --clearenv
 --setenv DISPLAY ${DISPLAY}
 --setenv LANG ${LANG}
---setenv HOME ${CNT_HOME_DIR}
---setenv DBUS_SESSION_BUS_ADDRESS "$DBUS_SESSION_BUS_ADDRESS"
-#--setenv QT_QPA_PLATFORM xcb
-#--setenv MESA_LOADER_DRIVER_OVERRIDE "zink"
-#--setenv XAUTHORITY "$XAUTHORITY"
---setenv XDG_CACHE_HOME ${CNT_HOME_DIR}/.cache
---setenv XDG_CONFIG_DIRS /etc/xdg
---setenv XDG_CONFIG_HOME ${CNT_HOME_DIR}/.config
---setenv XDG_CURRENT_DESKTOP "$XDG_CURRENT_DESKTOP"
---setenv XDG_DATA_DIRS "$XDG_DATA_DIRS"
-#--setenv XDG_GREETER_DATA_DIR /var/lib/lightdm/data/pbd
-#--setenv XDG_MENU_PREFIX xfce-
---setenv XDG_RUNTIME_DIR "$XDG_RUNTIME_DIR"
---setenv XDG_SEAT "$XDG_SEAT"
---setenv XDG_SEAT_PATH "$XDG_SEAT_PATH"
---setenv XDG_SESSION_CLASS "$XDG_SESSION_CLASS"
---setenv XDG_SESSION_DESKTOP "$XDG_SESSION_DESKTOP"
---setenv XDG_SESSION_ID "$XDG_SESSION_ID"
---setenv XDG_SESSION_PATH "$XDG_SESSION_PATH"
---setenv XDG_SESSION_TYPE "$XDG_SESSION_TYPE"
+--setenv HOME /root
 )
 
 CNT_SETUP_STR="${CNT_SETUP[@]} "
@@ -113,7 +54,7 @@ echo -n "$CNT_SETUP_STR" | tr ' ' '\0' > "$CNT_ARGS_FILE"
 
 
 echo "Executing ${EXEC}"
-echo "${HOME_DIR} will be mapped to ${CNT_HOME_DIR}"
+echo "${HOME} will be mapped to /root"
 #echo "DISPLAY=${DISPLAY}"
 echo "LANG=${LANG}"
 while true; do
@@ -121,8 +62,7 @@ while true; do
     if [ "${reply}" == "y" ]; then
 #      exec "${CNT_SETUP[@]}" "${EXEC}" "$@"
         exec {args_fd}< "$CNT_ARGS_FILE" && rm -f "$CNT_ARGS_FILE"
-        #exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
-        exec -a /sbin/init bwrap --args ${args_fd} setpriv --reuid=1000 --regid=1000 --inh-caps=-all --ambient-caps=-all --clear-groups "${EXEC}" "$@"
+        exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
     elif [ "${reply}" == "n" ]; then
         echo "Exiting..."
         exit 0

@@ -1,21 +1,29 @@
 #!/bin/bash
-#podman run -it --rm --privileged --volume $(pwd):/root -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:trixie
-#podman run -it --rm --privileged --volume $(pwd):/root --mount=type=bind,source=debian.sources,destination=/etc/apt/sources.list.d/debian.sources -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:trixie
-#podman run -it --rm --privileged --volume $(pwd):/root -e APPIMAGE_BASE=$APPIMAGE_BASE -e DISPLAY=$DISPLAY -v $APPIMAGE_BASE:$APPIMAGE_BASE -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:trixie
-#podman run -it --rm --privileged --volume $(pwd):/root --mount=type=bind,source=debian.sources,destination=/etc/apt/sources.list.d/debian.sources -e APPIMAGE_BASE=$APPIMAGE_BASE -e DISPLAY=$DISPLAY -v $APPIMAGE_BASE:$APPIMAGE_BASE -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:trixie
+#set -x
+#podman run -it --rm --privileged --volume $(pwd):/root -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:forky
+#podman run -it --rm --privileged --volume $(pwd):/root --mount=type=bind,source=debian.sources,destination=/etc/apt/sources.list.d/debian.sources -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:forky
+#podman run -it --rm --privileged --volume $(pwd):/root -e APPIMAGE_BASE=$APPIMAGE_BASE -e DISPLAY=$DISPLAY -v $APPIMAGE_BASE:$APPIMAGE_BASE -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:forky
+#podman run -it --rm --privileged --volume $(pwd):/root --mount=type=bind,source=debian.sources,destination=/etc/apt/sources.list.d/debian.sources -e APPIMAGE_BASE=$APPIMAGE_BASE -e DISPLAY=$DISPLAY -v $APPIMAGE_BASE:$APPIMAGE_BASE -v /tmp/.X11-unix:/tmp/.X11-unix:ro debian:forky
 #set -e
 PACKAGE="${1}"
-OVERLAY_TMPFS_SIZE=4G
+LOCALREPO="${2}"
+[ -z "$OVERLAY_TMPFS_SIZE" ] && OVERLAY_TMPFS_SIZE=4G
 
 function usage
 {
-    echo "Usage: $0 <package dir>"
+    echo "Usage: $0 <package dir> [<local repo dir>]"
     exit 1
 }
 
+[ $# -lt 1 ] && usage
+
 PACKAGE="$(realpath "${PACKAGE}")" 
-if [ $# -ne 1 ] || [ ! -d "${PACKAGE}" ]; then
+if [ -n "$PACKAGE" ] && [ ! -d "${PACKAGE}" ]; then
     usage
+fi
+if [ -n "$LOCALREPO" ]; then
+    LOCALREPO="$(realpath "${LOCALREPO}")"
+    [ ! -d "${LOCALREPO}" ] && usage
 fi
 
 function message
@@ -25,13 +33,32 @@ function message
     return 0
 }
 
+if [ -n "${APPDIR}" ]; then
+    APPDIR="$(realpath "${APPDIR}")"
+    if [ ! -d "${APPDIR}" ]; then
+        echo "APPDIR ${APPDIR} must be a directory"
+        exit 1
+    else
+        message "A valid APPDIR ${APPDIR} found..."
+        if [ -z "$AUTOMATIC" ]; then
+            read -p "Remove all the contents of the ${APPDIR}? [y/n] " reply
+            if [ "${reply}" == "y" ]; then
+                rm -rf "${APPDIR}"/*
+                rm -rf "${APPDIR}"/.DirIcon
+            fi
+        fi
+    fi
+fi
+
 function umount_dir
 {
     local DIR="$1"
-    while ! umount -R "${DIR}"; do
-        message "Umounting ${DIR} failed, launching console..."
-        /bin/bash --rcfile <(echo "PS1='Manual resolution ($(pwd))> '") -i
-    done &&\
+    if mountpoint -q "$DIR"; then
+        while ! umount -R "${DIR}"; do
+            message "Umounting ${DIR} failed, launching console..."
+            /bin/bash --rcfile <(echo "PS1='Manual resolution ($(pwd))> '") -i
+        done
+    fi
     return 0
 }
 function interactive_chroot_install
@@ -46,45 +73,53 @@ function interactive_chroot_install
         [ "$reply" == "y" ] && cat /overlay/merged/root/.bash_history | grep -v "^exit" >> overrides/install
     fi
 }
+message "Using tmpfs of size ${OVERLAY_TMPFS_SIZE} for overlay..."
 message "Setting up build container..."
 apt-get update >/dev/null 2>&1
-DEBIAN_FRONTEND=noninteractive apt-get -y install vim.tiny dialog fuse3 file make bubblewrap  >/dev/null 2>&1
+DEBIAN_FRONTEND=noninteractive apt-get -y install vim.tiny dialog fuse3 file make bubblewrap procps
 # For custom appimagetool
-DEBIAN_FRONTEND=noninteractive apt-get -y install libglib2.0-0t64 libgcrypt20 libgpgme11t64 libcurl4t64 libcurl4t64 squashfs-tools desktop-file-utils >/dev/null 2>&1
+DEBIAN_FRONTEND=noninteractive apt-get -y install libglib2.0-0t64 libgcrypt20 libgpgme45 libcurl4t64 libcurl4t64 squashfs-tools desktop-file-utils
 # For use in Makefiles
 #DEBIAN_FRONTEND=noninteractive apt-get -y install xdg-utils  >/dev/null 2>&1
 mkdir /overlay && mount -t tmpfs -o size=${OVERLAY_TMPFS_SIZE} tmpfs /overlay
 mkdir /overlay/{base,package,work,merged}
-# APPDIR ---------------------------------------------------------------------------------------------
+# APPDIR_SRC ---------------------------------------------------------------------------------------------
 cd "${PACKAGE}"
 while true; do
-    if [ -f overrides/APPDIR ]; then
-        APPDIR="$(cat overrides/APPDIR)"
+    if [ -f overrides/APPDIR_SRC ]; then
+        APPDIR_SRC="$(cat overrides/APPDIR_SRC)"
     else
         while true; do
             read -p "Use contents of /overlay/package [1] or /overlay/merged [2] as AppDir? " reply
             if [ "$reply" == "1" ]; then
-                APPDIR="/overlay/package"
+                APPDIR_SRC="/overlay/package"
                 break
             elif [ "$reply" == "2" ]; then
-                APPDIR="/overlay/merged"
+                APPDIR_SRC="/overlay/merged"
                 break
             else
                 echo "Incorrect reply: $reply"
             fi
         done
-        echo "$APPDIR" > overrides/APPDIR
+        echo "$APPDIR_SRC" > overrides/APPDIR_SRC
     fi
 
     [ -n "$AUTOMATIC" ] && break
 
-    echo -n "APPDIR: "; cat overrides/APPDIR
+    echo -n "APPDIR_SRC: "; cat overrides/APPDIR_SRC
     read -p "Is it what you want? [y/n] " reply
     [ "$reply" == "y" ] && break
-    rm -f overrides/APPDIR
+    rm -f overrides/APPDIR_SRC
 done
-[ -n "$AUTOMATIC" ] && echo "Using APPDIR:" && cat overrides/APPDIR
-# APPDIR ---------------------------------------------------------------------------------------------
+[ -n "$AUTOMATIC" ] && echo "Using APPDIR_SRC:" && cat overrides/APPDIR_SRC
+# APPDIR_SRC ---------------------------------------------------------------------------------------------
+if [ -z "$APPDIR" ]; then
+    message "APPDIR value not passed"
+    read -p "Setting APPDIR to ${APPDIR_SRC}, is it OK? [y/n]" reply
+    if [ "$reply" == "y" ]; then
+        APPDIR="$APPDIR_SRC"
+    fi
+fi
 # set_up_base ------------------------------------------------------------------------------------------------
 message "Creating base..."
 while true; do
@@ -116,7 +151,7 @@ while true; do
         break
     else
         cd /overlay/base
-        APPDIR="$APPDIR" /bin/bash --rcfile <(echo "PS1='Inspect /overlay/base ($(pwd))> '") -i
+        APPDIR_SRC="$APPDIR_SRC" /bin/bash --rcfile <(echo "PS1='Inspect /overlay/base ($(pwd))> '") -i
         read -p "Is your base OK? [y/n] " reply
         [ "${reply}" == "y" ] && break
     fi
@@ -183,11 +218,15 @@ OUTER
     # cleanup --------------------------------------------------------------------------------------------
 }
 
+function copy_merged_to_appdir
+{
+    message "Copying /overlay/merged to ${APPDIR}..."
+    (cd /overlay/merged; tar cf - .) | (cd "${APPDIR}"; tar xf -)
+}
+
 while true; do
-    message "Cleaning up /overlay/package wash-out files..."
-    find /overlay/package -type c -exec rm -f {} \;
     cd /overlay/package
-    [ -z "$AUTOMATIC" ] && APPDIR="$APPDIR" /bin/bash --rcfile <(echo "PS1='Inspect /overlay/package ($(pwd))> '") -i
+    [ -z "$AUTOMATIC" ] && APPDIR_SRC="$APPDIR_SRC" /bin/bash --rcfile <(echo "PS1='Inspect /overlay/package ($(pwd))> '") -i
     message "Mounting /overlay/merged..."
     mount -t overlay overlay -o userxattr,lowerdir=/overlay/base,upperdir=/overlay/package,workdir=/overlay/work /overlay/merged
     mount --rbind /dev /overlay/merged/dev
@@ -195,10 +234,12 @@ while true; do
     mount --rbind /run /overlay/merged/run
     mount --rbind /proc /overlay/merged/proc
     mount --rbind /tmp /overlay/merged/tmp
-    mkdir /overlay/merged/package
+    mkdir /overlay/merged/{package,localrepo}
     mount --bind "${PACKAGE}" /overlay/merged/package
+    [ -n "$LOCALREPO" ] && mount --bind "${LOCALREPO}" /overlay/merged/localrepo
     install_and_cleanup
     umount_dir /overlay/merged/package
+    [ -n "$LOCALREPO" ] && umount_dir /overlay/merged/localrepo
     rmdir /overlay/merged/package
     cd "${PACKAGE}"
     umount_dir /overlay/merged/proc
@@ -206,10 +247,16 @@ while true; do
     umount_dir /overlay/merged/dev
     umount_dir /overlay/merged/run
     umount_dir /overlay/merged/tmp
+    if [ -n "$APPDIR" ]; then
+        if [ -n "$(find "$APPDIR" -maxdepth 0 -type d  -empty 2>/dev/null)" ]; then
+            copy_merged_to_appdir
+        fi
+    fi
     if [ -z "$AUTOMATIC" ]; then
-        APPDIR="$APPDIR" /bin/bash --rcfile <(echo "PS1='Set up Makefile ($(pwd))> '") -i
+	export -f copy_merged_to_appdir message
+        APPDIR_SRC="$APPDIR_SRC" APPDIR="$APPDIR" /bin/bash --rcfile <(echo "PS1='Set up Makefile ($(pwd))> '") -i
     else
-        APPDIR="$APPDIR" make
+        APPDIR_SRC="$APPDIR_SRC" APPDIR="$APPDIR" make
     fi
     message "Umounting /overlay/merged..."
     umount_dir /overlay/merged

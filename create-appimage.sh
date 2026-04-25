@@ -76,7 +76,7 @@ function interactive_chroot_install
 message "Using tmpfs of size ${OVERLAY_TMPFS_SIZE} for overlay..."
 message "Setting up build container..."
 apt-get update >/dev/null 2>&1
-DEBIAN_FRONTEND=noninteractive apt-get -y install vim.tiny dialog fuse3 file make bubblewrap
+DEBIAN_FRONTEND=noninteractive apt-get -y install vim.tiny dialog fuse3 file make bubblewrap procps
 # For custom appimagetool
 DEBIAN_FRONTEND=noninteractive apt-get -y install libglib2.0-0t64 libgcrypt20 libgpgme45 libcurl4t64 libcurl4t64 squashfs-tools desktop-file-utils
 # For use in Makefiles

@@ -81,7 +81,7 @@ fonts-ttf-unbounded
 #glibc-locale-source
 localedef --inputfile=ru_RU --charmap=UTF-8 ru_RU.UTF-8
 localedef --inputfile=en_US --charmap=UTF-8 en_US.UTF-8
-useradd -u 1000 -m -s /bin/bash maxuser
+#useradd -u 1000 -m -s /bin/bash maxuser
 ldd /usr/share/max/bin/max|grep found
 ldd /usr/share/max/bin/max-service/bin/max-service|grep found
 ldd /usr/share/max/plugins/platforms/libqxcb.so |grep found

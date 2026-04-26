@@ -1,40 +1,27 @@
 #!/bin/bash
 #set -x
 EXEC="${1}"; shift
-#EXEC="/usr/share/max/bin/max"
+if [ -z "${EXEC}" ]; then
+    EXEC="/usr/share/max/bin/max"
+fi
 
 if [ -z "${EXEC}" ]; then
     echo "Usage: AppImage <exec file>"
     exit 1
 fi
-#if [ -z "${APPIMAGE_BASE}" ]; then
-#    echo "APPIMAGE_BASE not set"
-#    exit 1
-#fi
-#[ -z "${PWD}" ] && PWD=$(pwd)
-#HOME_DIR=$(realpath ${PWD})
-HOME_DIR="/home/pbd/maxhome"
-CNT_HOME_DIR="/home/maxuser"
-LANG="ru_RU.UTF-8"
+
+#LANG="ru_RU.UTF-8"
 
 CNT_ARGS_FILE="/tmp/args"
 trap "rm -f $CNT_ARGS_FILE" EXIT
 
-#(
-#exec Xephyr -br -ac -noreset -screen 1280x800 -retro :1
-#exec Xephyr -keybd ephyr,,,xkbmodel=evdev,xkblayout=ru,xkbvariant=intl -br -ac -noreset -screen 1280x800 -retro :1
-#exec Xephyr -keybd ephyr,,,xkbmodel=evdev,xkblayout=ru -screen 1280x800 -retro :1
-#) &
-#DISPLAY=:1
-
-
 CNT_SETUP=( bwrap
-#--unshare-user
-#--uid 0
-#--gid 0
+--unshare-user
+--uid 0
+--gid 0
 --unshare-pid
 --unshare-ipc
---unshare-cgroup
+#--unshare-cgroup
 #--unshare-net
 #--overlay-src ${APPIMAGE_BASE}
 #--overlay-src ${APPDIR}
@@ -47,36 +34,25 @@ CNT_SETUP=( bwrap
 --dev-bind /dev /dev
 #--dev /dev
 --bind /sys /sys
---bind /run /run
+#--bind /run /run
+--tmpfs /run
+--bind /run/dbus /run/dbus
+--bind /run/user /run/user
+--bind /run/lock /run/lock
+--bind /run/udev /run/udev
+--bind /run/polkit /run/polkit
 #--bind /home /home
+--bind ${HOME} /root
 #--bind /tmp /tmp
 --tmpfs /tmp
 --dir /tmp/.X11-unix
 --bind /tmp/.X11-unix /tmp/.X11-unix
---bind ${HOME_DIR} ${CNT_HOME_DIR}
 --clearenv
 --setenv DISPLAY ${DISPLAY}
 --setenv LANG ${LANG}
---setenv HOME ${CNT_HOME_DIR}
---setenv DBUS_SESSION_BUS_ADDRESS "$DBUS_SESSION_BUS_ADDRESS"
-#--setenv QT_QPA_PLATFORM xcb
-#--setenv MESA_LOADER_DRIVER_OVERRIDE "zink"
-#--setenv XAUTHORITY "$XAUTHORITY"
---setenv XDG_CACHE_HOME ${CNT_HOME_DIR}/.cache
---setenv XDG_CONFIG_DIRS /etc/xdg
---setenv XDG_CONFIG_HOME ${CNT_HOME_DIR}/.config
---setenv XDG_CURRENT_DESKTOP "$XDG_CURRENT_DESKTOP"
---setenv XDG_DATA_DIRS "$XDG_DATA_DIRS"
-#--setenv XDG_GREETER_DATA_DIR /var/lib/lightdm/data/pbd
-#--setenv XDG_MENU_PREFIX xfce-
---setenv XDG_RUNTIME_DIR "$XDG_RUNTIME_DIR"
---setenv XDG_SEAT "$XDG_SEAT"
---setenv XDG_SEAT_PATH "$XDG_SEAT_PATH"
---setenv XDG_SESSION_CLASS "$XDG_SESSION_CLASS"
---setenv XDG_SESSION_DESKTOP "$XDG_SESSION_DESKTOP"
---setenv XDG_SESSION_ID "$XDG_SESSION_ID"
---setenv XDG_SESSION_PATH "$XDG_SESSION_PATH"
---setenv XDG_SESSION_TYPE "$XDG_SESSION_TYPE"
+--setenv HOME /root
+--setenv DBUS_SESSION_BUS_ADDRESS ${DBUS_SESSION_BUS_ADDRESS}
+--setenv PULSE_SERVER ${XDG_RUNTIME_DIR}/pulse/native
 )
 
 CNT_SETUP_STR="${CNT_SETUP[@]} "
@@ -84,17 +60,39 @@ CNT_SETUP_STR="${CNT_SETUP_STR#bwrap }"
 echo -n "$CNT_SETUP_STR" | tr ' ' '\0' > "$CNT_ARGS_FILE"
 #echo "--dev-bind / / " | tr ' ' '\0' > "$CNT_ARGS_FILE"
 
+function unlock_keyring ()
+{
+    read -rsp "Keyring password: " pass
+    echo -n "$pass" | gnome-keyring-daemon --daemonize --replace --unlock
+    unset pass
+}
+
+# Might be useful in the future
+function lock_keyring ()
+{
+    pkill -u "$(whoami)" -f gnome-keyring-daemon
+}
 
 echo "Executing ${EXEC}"
-echo "${HOME_DIR} will be mapped to ${CNT_HOME_DIR}"
+echo "${HOME} will be mapped to /root"
 #echo "DISPLAY=${DISPLAY}"
 echo "LANG=${LANG}"
+if [ "${HOME}" != "/home/maxuser" ]; then
+    echo "Wrong user detected, exiting. Next time, try:"
+    echo "ssh -X maxuser@localhost"
+    exit 1
+fi
 while true; do
     read -p "Is it OK? [y/n] " reply
     if [ "${reply}" == "y" ]; then
+       unlock_keyring
 #      exec "${CNT_SETUP[@]}" "${EXEC}" "$@"
         exec {args_fd}< "$CNT_ARGS_FILE" && rm -f "$CNT_ARGS_FILE"
-        exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
+        if [ "${EXEC}" == "/usr/share/max/bin/max" ]; then
+            exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" </dev/null >/dev/null 2>&1
+        else
+            exec -a /sbin/init bwrap --args ${args_fd} "${EXEC}" "$@"
+        fi
     elif [ "${reply}" == "n" ]; then
         echo "Exiting..."
         exit 0
